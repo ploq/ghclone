@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+
+import sys
+from urllib.parse import urlparse
+from asyncio import create_subprocess_exec, coroutine, subprocess, get_event_loop
+
+
+if len(sys.argv) != 2: 
+	print("Usage: ghclone HTTPS_link")
+	exit(1)
+
+
+def getGHSSH(gh_https):
+	gh_link = urlparse(gh_https)
+	gh_path = gh_link[2].split("/")
+	gh_path_spl = list(filter(None, gh_path))
+	
+	gh_user = gh_path_spl[0]
+	gh_repo = gh_path_spl[1]
+
+	return "git@github.com:{}/{}.git".format(gh_user, gh_repo)
+
+
+@coroutine
+def cloneRepo(gh_ssh):
+	proc = yield from create_subprocess_exec(*["git", "clone", gh_ssh],
+		stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+	stdout, _ = yield from proc.communicate()
+	stdout = stdout.decode("utf-8").split("\n")
+	stdout = filter(None, stdout)
+	
+	for line in stdout:
+		print("git: {}".format(line))
+
+
+if __name__ == "__main__":
+	gh_ssh = getGHSSH(sys.argv[1])
+	print("ghclone: Generated ssh: {}".format(gh_ssh))
+	
+	loop = get_event_loop()
+	loop.run_until_complete(cloneRepo(gh_ssh))
+	loop.close()
