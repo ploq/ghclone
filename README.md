@@ -1,3 +1,3 @@
 # ghclone
 
-Simple tool for cloning Github repo with SSH by HTTP(s) link.
+Simple tool for cloning git repos with SSH by HTTP(s) link.
