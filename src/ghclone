@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import shlex
 from urllib.parse import urlparse
 from asyncio import create_subprocess_exec, coroutine, subprocess, get_event_loop
 
@@ -10,21 +11,25 @@ if len(sys.argv) != 2:
 	exit(1)
 
 
-def getGHSSH(gh_https):
-	gh_link = urlparse(gh_https)
-	gh_path = gh_link[2].split("/")
-	gh_path_spl = list(filter(None, gh_path))
+def getGHSSH(git_https):
+	if len(shlex.split(git_https)) > 1:
+		print("Errornous link!")
+		exit(10)
+	git_link = urlparse(git_https)
+	git_host = git_link.netloc
+	git_path = git_link.path.split("/")
+	git_path = list(filter(None, git_path))
 	
-	gh_user = gh_path_spl[0]
-	gh_repo = gh_path_spl[1]
+	git_user = git_path[0]
+	git_repo = git_path[1]
 
-	return "git@github.com:{}/{}.git".format(gh_user, gh_repo)
+	return "git@{}:{}/{}.git".format(git_host, git_user, git_repo)
 
 
 @coroutine
-def cloneRepo(gh_ssh):
-	proc = yield from create_subprocess_exec(*["git", "clone", gh_ssh],
-		stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+def cloneRepo(git_ssh):
+	proc = yield from create_subprocess_exec(*["git", "clone", shlex.quote(git_ssh)],
+		stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
 
 	stdout, _ = yield from proc.communicate()
 	stdout = stdout.decode("utf-8").split("\n")
